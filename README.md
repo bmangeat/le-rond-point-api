@@ -49,6 +49,71 @@ pnpm run build && pnpm run start
 
 L'API tourne sur `http://localhost:3001/api`.
 
+## Déploiement Vercel
+
+L'API tourne en **serverless** sur Vercel via une fonction unique ([api/index.ts](api/index.ts))
+qui charge le serveur Nest compilé ([src/server.ts](src/server.ts) → `dist/server.js`) et le
+met en cache entre les invocations. Tout est configuré dans [vercel.json](vercel.json) :
+
+- **Build** : `nest build` (les migrations ne tournent **pas** au build — voir CD ci-dessous).
+- **Routage** : toutes les requêtes sont redirigées vers la fonction (`rewrites`).
+- **Cron** : Vercel Cron appelle `GET /api/cron/daily` tous les jours à 7h UTC
+  (le décorateur `@Cron` in-process ne se déclenche pas en serverless).
+- **Auto-deploy désactivé sur `main`** (`git.deploymentEnabled`) : le déploiement prod est
+  piloté par GitHub Actions pour garantir l'ordre migrations → mise en ligne.
+
+### Migrations & déploiement (CD GitHub Actions)
+
+Les migrations doivent être appliquées **avant** que le nouveau code passe en ligne (sinon le
+code attend un schéma que la base n'a pas encore). Comme Vercel déploierait immédiatement au
+push, l'auto-deploy sur `main` est coupé et [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+orchestre la séquence à chaque push sur `main` :
+
+1. `prisma migrate deploy` (applique les migrations en attente — sur base vide, joue l'init) ;
+2. déploiement Vercel en production (`vercel pull/build/deploy --prod`).
+
+**Secrets GitHub à configurer** (Settings → Secrets and variables → Actions) :
+
+| Secret | Valeur |
+|--------|--------|
+| `DATABASE_URL` | Neon pooled (prod) |
+| `DIRECT_URL` | Neon directe (prod) — utilisée par les migrations |
+| `VERCEL_TOKEN` | jeton perso Vercel (Account Settings → Tokens) |
+| `VERCEL_ORG_ID` | depuis `.vercel/project.json` après un `vercel link`, ou Settings Vercel |
+| `VERCEL_PROJECT_ID` | idem |
+
+> Alternative manuelle : tu peux toujours appliquer les migrations à la main avec
+> `DIRECT_URL=... pnpm run migrate:deploy` avant de déployer.
+
+### Mise en place
+
+1. **Base de données** : provisionner une base Postgres (Neon recommandé — pooling
+   serverless). Récupérer l'URL *pooled* et l'URL *directe*.
+2. **Importer le repo** sur Vercel (Framework preset : **Other** — `vercel.json` gère le reste).
+3. **Variables d'environnement** (Project Settings → Environment Variables) :
+
+   | Variable | Note |
+   |----------|------|
+   | `DATABASE_URL` | Neon **pooled** (`...&pgbouncer=true`) — utilisé par l'app |
+   | `DIRECT_URL` | Neon **directe** — utilisé par `migrate deploy` au build |
+   | `JWT_SECRET` / `JWT_REFRESH_SECRET` | secrets forts |
+   | `GOOGLE_CLIENT_ID` | OAuth Google |
+   | `VAPID_SUBJECT` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push |
+   | `BLOB_READ_WRITE_TOKEN` | Vercel Blob (photos) |
+   | `RESEND_API_KEY` / `RESEND_FROM` | emails (optionnel) |
+   | `APP_URL` / `ALLOWED_ORIGINS` | URL appli + CORS |
+   | `CRON_SECRET` | protège `/api/cron/daily` (Vercel l'envoie en `Bearer`) |
+
+4. **Déployer**. Le build applique les migrations puis compile.
+
+> ⚠️ Le `buildCommand` lance `prisma migrate deploy` **à chaque build, y compris en
+> preview** — ce qui migre la base ciblée par les env vars de cet environnement. Utiliser
+> une base distincte pour les déploiements preview, ou retirer `migrate deploy` du build et
+> le lancer manuellement / en production uniquement.
+
+> ℹ️ Cron quotidien et `maxDuration: 60` : vérifier les limites de ton plan Vercel
+> (le plan Hobby limite les crons à une exécution par jour).
+
 ## Scripts
 
 | Commande | Description |

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lrp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lrp
+      POSTGRES_PASSWORD: lrp
+      POSTGRES_DB: le_rond_point
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lrp -d le_rond_point"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

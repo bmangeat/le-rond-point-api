@@ -1,0 +1,50 @@
+name: Deploy (production)
+
+# Déploiement piloté par GitHub Actions plutôt que par l'auto-deploy Vercel,
+# afin de garantir l'ordre : migrations DB AVANT mise en ligne du nouveau code.
+# (L'auto-deploy Vercel sur `main` est désactivé via vercel.json → git.deploymentEnabled.)
+
+on:
+  push:
+    branches: [main]
+
+# Évite que deux déploiements se chevauchent
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # 1) Migrations AVANT le déploiement du nouveau code.
+      #    Sur une base vide, la migration d'init crée tout le schéma.
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      # 2) Déploiement Vercel en production (prebuilt, après migrations OK).
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          pnpm dlx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          pnpm dlx vercel build --prod --token="$VERCEL_TOKEN"
+          pnpm dlx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

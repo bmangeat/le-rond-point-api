@@ -112,6 +112,7 @@ model User {
   eventComments         EventComment[]
   eventPhotos           EventPhoto[]              @relation("PhotoUploader")
   commentReports        CommentReport[]
+  invitation            Invitation?               @relation("InvitedUser")
 
   // NextAuth
   accounts Account[]
