@@ -1,0 +1,404 @@
+// Le Rond Point — Prisma Schema
+// Env: DATABASE_URL (pooled) + DIRECT_URL (direct, for migrations)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum GlobalRole {
+  SUPER_ADMIN // accès à tous les groupes, modération globale
+  USER        // rôle dans chaque groupe défini par GroupMembership.role
+}
+
+enum GroupRole {
+  ADMIN  // admin de ce groupe
+  MEMBER // membre de ce groupe
+}
+
+enum EventType {
+  BAR
+  RESTO
+  SOIREE
+  SORTIE
+}
+
+enum EventStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum RsvpStatus {
+  YES
+  NO
+  PENDING
+}
+
+enum Availability {
+  OPEN // Ouvert aux retrouvailles
+  BUSY // Passage rapide, peu dispo
+}
+
+// ---------------------------------------------------------------------------
+// Group
+// ---------------------------------------------------------------------------
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  creatorId String // snapshot — pas de FK, survit au départ du créateur
+  createdAt DateTime @default(now())
+
+  memberships GroupMembership[]
+  events      Event[]
+  invitations Invitation[]
+  presences   Presence[]
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String
+  image         String?
+  emailVerified DateTime?
+
+  // Profil global (partagé entre tous les groupes)
+  city      String?
+  birthday  DateTime?
+  phone     String?
+  instagram String?
+  snapchat  String?
+  tiktok    String?
+  linkedin  String?
+
+  // Notifications push (préférences globales)
+  notifPush           Boolean @default(false)
+  notifPushOverlap    Boolean @default(true)
+  notifPushBirthday   Boolean @default(true)
+  notifPushPresence   Boolean @default(true)
+  notifPushPhotos     Boolean @default(true)
+  notifPushEvents     Boolean @default(true)
+  notifPushAsResident Boolean @default(true)
+
+  // Rôle global — uniquement pour le SUPER_ADMIN
+  globalRole GlobalRole @default(USER)
+
+  isActive  Boolean  @default(true) // soft delete global (SUPER_ADMIN uniquement)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  memberships           GroupMembership[]
+  presences             Presence[]
+  pushSubscriptions     PushSubscription[]
+  eventsHosted          Event[]                   @relation("EventHost")
+  eventRsvps            EventRsvp[]
+  eventNeeds            EventNeed[]               @relation("NeedClaim")
+  eventExpenses         EventExpense[]            @relation("ExpensePayer")
+  expenseParticipations EventExpenseParticipant[]
+  eventComments         EventComment[]
+  eventPhotos           EventPhoto[]              @relation("PhotoUploader")
+  commentReports        CommentReport[]
+
+  // NextAuth
+  accounts Account[]
+  sessions Session[]
+}
+
+// ---------------------------------------------------------------------------
+// GroupMembership — table centrale du multi-tenant
+// ---------------------------------------------------------------------------
+
+model GroupMembership {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  role        GroupRole @default(MEMBER)
+  memberColor Int       @default(1) // 1-12, unique au sein du groupe (logique applicative)
+  isResident  Boolean   @default(false) // peut différer selon les groupes
+
+  isActive    Boolean   @default(true) // false = retiré du groupe (soft delete per-group)
+  onboardedAt DateTime? // null = onboarding non complété pour CE groupe
+  joinedAt    DateTime  @default(now())
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Presence
+// ---------------------------------------------------------------------------
+
+model Presence {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId      String // obligatoire — présence scoped par groupe
+  group        Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  startDate    DateTime // minuit UTC
+  endDate      DateTime // minuit UTC
+  note         String?      @db.VarChar(200)
+  availability Availability @default(OPEN)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([groupId])
+  @@index([userId, groupId])
+}
+
+// ---------------------------------------------------------------------------
+// Invitation
+// ---------------------------------------------------------------------------
+
+model Invitation {
+  id            String    @id @default(cuid())
+  email         String? // null = lien générique à usage unique
+  token         String    @unique @default(cuid())
+  expiresAt     DateTime
+  usedAt        DateTime?
+  invitedUserId String?   @unique
+  invitedUser   User?     @relation("InvitedUser", fields: [invitedUserId], references: [id])
+  groupId       String // obligatoire
+  group         Group     @relation(fields: [groupId], references: [id])
+  createdAt     DateTime  @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Event (Sortie)
+// ---------------------------------------------------------------------------
+
+model Event {
+  id              String      @id @default(cuid())
+  type            EventType
+  name            String
+  hostId          String?
+  host            User?       @relation("EventHost", fields: [hostId], references: [id], onDelete: SetNull)
+  description     String?     @db.VarChar(500)
+  whenAt          DateTime
+  placeName       String
+  placeAddr       String?
+  status          EventStatus @default(ACTIVE)
+  cancelReason    String?     @db.VarChar(500)
+  cancelledAt     DateTime?
+  needsEnabled    Boolean     @default(false)
+  tricountEnabled Boolean     @default(true)
+  hasPlaylist     Boolean     @default(false)
+  playlistUrl     String?
+  groupId         String
+  group           Group       @relation(fields: [groupId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  rsvps    EventRsvp[]
+  needs    EventNeed[]
+  expenses EventExpense[]
+  comments EventComment[]
+  photos   EventPhoto[]
+
+  @@index([whenAt])
+  @@index([groupId, status])
+}
+
+// ---------------------------------------------------------------------------
+// EventRsvp
+// ---------------------------------------------------------------------------
+
+model EventRsvp {
+  id      String     @id @default(cuid())
+  eventId String
+  event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status  RsvpStatus @default(PENDING)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+}
+
+// ---------------------------------------------------------------------------
+// EventNeed
+// ---------------------------------------------------------------------------
+
+model EventNeed {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label       String
+  claimedById String?
+  claimedBy   User?    @relation("NeedClaim", fields: [claimedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+// ---------------------------------------------------------------------------
+// EventExpense + EventExpenseParticipant
+// ---------------------------------------------------------------------------
+
+model EventExpense {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  payerId   String
+  payer     User     @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  label     String
+  amount    Float
+  createdAt DateTime @default(now())
+
+  participants EventExpenseParticipant[]
+
+  @@index([eventId])
+}
+
+model EventExpenseParticipant {
+  expenseId String
+  expense   EventExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([expenseId, userId])
+  @@index([expenseId])
+}
+
+// ---------------------------------------------------------------------------
+// EventComment + CommentReport
+// ---------------------------------------------------------------------------
+
+model EventComment {
+  id        String          @id @default(cuid())
+  eventId   String
+  event     Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String          @db.VarChar(500)
+  createdAt DateTime        @default(now())
+  reports   CommentReport[]
+
+  @@index([eventId])
+}
+
+model CommentReport {
+  id         String       @id @default(cuid())
+  commentId  String
+  comment    EventComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String?      @db.VarChar(280)
+  createdAt  DateTime     @default(now())
+
+  @@unique([commentId, reporterId])
+  @@index([commentId])
+}
+
+// ---------------------------------------------------------------------------
+// EventPhoto
+// ---------------------------------------------------------------------------
+
+model EventPhoto {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User     @relation("PhotoUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+  url        String
+  createdAt  DateTime @default(now())
+
+  @@index([eventId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// PushSubscription
+// ---------------------------------------------------------------------------
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// AuditLog (sans FK — survit aux suppressions)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String // snapshot
+  actorEmail String
+  action     String
+  targetType String
+  targetId   String
+  groupId    String?
+  reason     String?  @db.VarChar(500)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([actorId])
+  @@index([targetType, targetId])
+}
+
+// ---------------------------------------------------------------------------
+// NextAuth tables
+// ---------------------------------------------------------------------------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
