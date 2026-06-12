@@ -1,0 +1,28 @@
+meta {
+  name: Subscribe to Push
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/push/subscribe
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/xxx",
+    "p256dh": "BNcRdreA...",
+    "auth": "tBHItJI..."
+  }
+}
+
+docs {
+  Données récupérées via pushManager.subscribe() dans le navigateur.
+  Met à jour user.notifPush = true en base.
+}

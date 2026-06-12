@@ -1,0 +1,23 @@
+meta {
+  name: List Presences
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/groups/{{groupId}}/presences
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+query {
+  ~userId: {{userId}}
+}
+
+docs {
+  Décommenter `userId` pour filtrer par membre.
+}

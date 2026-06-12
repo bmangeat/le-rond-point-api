@@ -1,0 +1,29 @@
+meta {
+  name: Update Event
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Apéro de rentrée (confirmé)",
+    "whenAt": "2026-09-05T20:00:00.000Z",
+    "placeName": "Le Baratin",
+    "hasPlaylist": true,
+    "playlistUrl": "https://open.spotify.com/playlist/xxx"
+  }
+}
+
+docs {
+  Réservé à l'hôte ou à un admin du groupe.
+}

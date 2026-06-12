@@ -1,0 +1,15 @@
+meta {
+  name: Delete Comment
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/comments/{{commentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Cancel Event
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "reason": "Le bar est fermé ce soir, on reporte."
+  }
+}
+
+docs {
+  Annulation soft : status → CANCELLED. La sortie reste en base.
+  Réservé à l'hôte ou à un admin.
+}

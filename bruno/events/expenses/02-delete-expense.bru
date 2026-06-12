@@ -1,0 +1,15 @@
+meta {
+  name: Delete Expense
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/expenses/{{expenseId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

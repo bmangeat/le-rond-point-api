@@ -1,0 +1,15 @@
+meta {
+  name: Claim Need
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/needs/{{needId}}/claim
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

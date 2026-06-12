@@ -1,0 +1,25 @@
+meta {
+  name: Create Need
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/needs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "label": "Chips & apéro 🧆"
+  }
+}
+
+docs {
+  Copier l'id retourné dans `needId`.
+}

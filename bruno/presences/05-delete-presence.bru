@@ -1,0 +1,15 @@
+meta {
+  name: Delete Presence
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/presences/{{presenceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

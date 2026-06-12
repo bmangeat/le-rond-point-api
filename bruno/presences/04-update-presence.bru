@@ -1,0 +1,23 @@
+meta {
+  name: Update Presence
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}/presences/{{presenceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "endDate": "2026-07-10",
+    "availability": "BUSY",
+    "note": "Finalement jusqu'au 10"
+  }
+}

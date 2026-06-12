@@ -1,0 +1,20 @@
+meta {
+  name: Get Tricount Balances
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/balances
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Retourne { expenses, debts } où debts = liste simplifiée
+  des remboursements à effectuer (qui doit quoi à qui).
+}

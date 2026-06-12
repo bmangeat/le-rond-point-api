@@ -1,0 +1,25 @@
+meta {
+  name: Update RSVP
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/rsvp
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "status": "YES"
+  }
+}
+
+docs {
+  status: "YES" | "NO" | "PENDING"
+}

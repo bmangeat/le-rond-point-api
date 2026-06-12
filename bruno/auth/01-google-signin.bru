@@ -1,0 +1,25 @@
+meta {
+  name: Google Sign-In
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/google
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "idToken": "eyJhb..."
+  }
+}
+
+docs {
+  Envoie l'idToken récupéré par le SDK Google Sign-In (mobile).
+  Retourne { accessToken, refreshToken }.
+
+  Copier accessToken dans la variable d'environnement `accessToken`
+  et refreshToken dans `refreshToken`.
+}

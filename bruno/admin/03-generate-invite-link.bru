@@ -1,0 +1,20 @@
+meta {
+  name: Generate Invite Link
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/admin/invite/link
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Génère un lien d'invitation à usage unique, valable 7 jours.
+  Retourne { invitation, url }.
+}

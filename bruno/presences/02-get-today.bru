@@ -1,0 +1,20 @@
+meta {
+  name: Get Today Presence
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/groups/{{groupId}}/presences/today
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Retourne la présence active aujourd'hui pour l'utilisateur connecté,
+  ou null si pas de présence active.
+}

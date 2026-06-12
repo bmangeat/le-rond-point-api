@@ -1,0 +1,36 @@
+meta {
+  name: Create Event
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/events
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "type": "BAR",
+    "name": "Apéro de rentrée",
+    "description": "On se retrouve pour l'apéro de rentrée !",
+    "whenAt": "2026-09-05T19:00:00.000Z",
+    "placeName": "Le Baratin",
+    "placeAddr": "3 rue Jouye-Rouve, 75020 Paris",
+    "needsEnabled": true,
+    "tricountEnabled": true,
+    "hasPlaylist": false
+  }
+}
+
+docs {
+  type: "BAR" | "RESTO" | "SOIREE" | "SORTIE"
+  RSVP PENDING créés automatiquement pour tous les membres actifs.
+  L'hôte est automatiquement passé à YES.
+  Copier l'id retourné dans `eventId`.
+}

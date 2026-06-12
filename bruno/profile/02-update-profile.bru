@@ -1,0 +1,33 @@
+meta {
+  name: Update Profile
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/profile
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Brice M.",
+    "city": "Paris",
+    "birthday": "1990-06-15",
+    "phone": "+33612345678",
+    "instagram": "brice.m",
+    "snapchat": "",
+    "tiktok": "",
+    "linkedin": "bricemangeat",
+    "notifPushOverlap": true,
+    "notifPushBirthday": true,
+    "notifPushPresence": true,
+    "notifPushPhotos": true,
+    "notifPushEvents": true
+  }
+}

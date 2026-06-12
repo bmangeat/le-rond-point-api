@@ -1,0 +1,21 @@
+meta {
+  name: Update My Membership
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}/members/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "isResident": true
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Rename Group
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/groups/{{groupId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Nouveau Nom du Groupe"
+  }
+}

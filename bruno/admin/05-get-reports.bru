@@ -1,0 +1,15 @@
+meta {
+  name: Get Reported Comments
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/groups/{{groupId}}/admin/reports
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

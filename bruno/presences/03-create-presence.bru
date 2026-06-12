@@ -1,0 +1,30 @@
+meta {
+  name: Create Presence
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/presences
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-07",
+    "availability": "OPEN",
+    "note": "Dispo du mardi au jeudi soir"
+  }
+}
+
+docs {
+  availability: "OPEN" | "BUSY"
+  Les dates sont converties en minuit UTC côté serveur.
+  Copier l'id retourné dans `presenceId`.
+}

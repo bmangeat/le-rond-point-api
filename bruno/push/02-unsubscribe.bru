@@ -1,0 +1,26 @@
+meta {
+  name: Unsubscribe from Push
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/push/subscribe
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/xxx"
+  }
+}
+
+docs {
+  Supprime la subscription pour cet endpoint.
+  Si plus aucune subscription → user.notifPush = false.
+}

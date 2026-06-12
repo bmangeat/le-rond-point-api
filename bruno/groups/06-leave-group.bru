@@ -1,0 +1,15 @@
+meta {
+  name: Leave Group
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/members/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Remove Member
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/members/{{userId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Soft delete per-group (GroupMembership.isActive = false).
+  Ne supprime pas le compte ni les données de l'utilisateur.
+  Réservé aux admins. Ne peut pas retirer un autre admin.
+}

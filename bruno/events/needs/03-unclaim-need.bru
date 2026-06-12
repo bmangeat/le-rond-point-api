@@ -1,0 +1,15 @@
+meta {
+  name: Unclaim Need
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/needs/{{needId}}/claim
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

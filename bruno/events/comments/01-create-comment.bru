@@ -1,0 +1,25 @@
+meta {
+  name: Create Comment
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/comments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Super idée, j'arrive vers 20h !"
+  }
+}
+
+docs {
+  Copier l'id retourné dans `commentId`.
+}

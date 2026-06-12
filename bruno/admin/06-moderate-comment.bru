@@ -1,0 +1,27 @@
+meta {
+  name: Moderate Comment
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/admin/reports
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "commentId": "{{commentId}}",
+    "op": "delete"
+  }
+}
+
+docs {
+  op: "delete" → supprime le commentaire + ses signalements
+  op: "dismiss" → supprime uniquement les signalements (conserve le commentaire)
+}

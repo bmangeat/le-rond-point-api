@@ -1,0 +1,29 @@
+meta {
+  name: Create Expense
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/groups/{{groupId}}/events/{{eventId}}/expenses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "label": "Bouteilles de vin",
+    "amount": 45.50,
+    "participantIds": ["userId1", "userId2", "userId3"]
+  }
+}
+
+docs {
+  payerId = utilisateur connecté.
+  participantIds = IDs des personnes qui partagent la dépense (inclure le payeur).
+  Copier l'id retourné dans `expenseId`.
+}
