@@ -17,8 +17,15 @@ export function configureApp(app: INestApplication): void {
     }),
   );
 
+  // CORS — n'affecte que les clients navigateur (app mobile native et
+  // clients type Bruno/Postman ignorent le CORS). Auth en Bearer token,
+  // donc pas de cookies → credentials: false, ce qui rend `*` valide.
+  const allowedOrigins = process.env.ALLOWED_ORIGINS;
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*',
-    credentials: true,
+    origin:
+      !allowedOrigins || allowedOrigins === '*'
+        ? '*'
+        : allowedOrigins.split(','),
+    credentials: false,
   });
 }

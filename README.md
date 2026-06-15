@@ -24,6 +24,36 @@ cp .env.example .env
 # Remplir les variables dans .env
 ```
 
+### Génération des secrets / variables
+
+```bash
+# JWT_SECRET et JWT_REFRESH_SECRET (un secret aléatoire chacun)
+openssl rand -base64 32
+openssl rand -base64 32
+
+# CRON_SECRET (protège GET /api/cron/daily)
+openssl rand -base64 32
+
+# Clés Web Push VAPID — génère la PAIRE (publique + privée) d'un coup.
+# publicKey  → NEXT_PUBLIC_VAPID_PUBLIC_KEY
+# privateKey → VAPID_PRIVATE_KEY
+pnpm exec web-push generate-vapid-keys --json
+```
+
+Les autres variables ne se « génèrent » pas avec une commande :
+
+| Variable | D'où elle vient |
+|----------|-----------------|
+| `DATABASE_URL` / `DIRECT_URL` | tableau de bord de ta base (Neon en prod, Docker en local) |
+| `GOOGLE_CLIENT_ID` | Google Cloud Console → OAuth |
+| `VAPID_SUBJECT` | un `mailto:ton-email` ou une URL (pas de génération) |
+| `BLOB_READ_WRITE_TOKEN` | injecté automatiquement en créant un store **Vercel → Storage → Blob** (laisser vide tant que l'upload de photos n'est pas utilisé) |
+| `ALLOWED_ORIGINS` | `*` si client mobile/Bruno uniquement ; sinon les origines web exactes |
+
+> ⚠️ Génère la paire VAPID **une seule fois** par environnement : la régénérer invalide
+> tous les abonnements push existants. Ne jamais committer ces valeurs (elles vont dans
+> `.env` local et dans les variables d'env Vercel).
+
 ## Base de données locale
 
 ```bash
