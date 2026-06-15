@@ -186,8 +186,27 @@ Le `refreshToken` est renouvelé via `POST /api/auth/refresh`.
 ### Auth
 | Méthode | Route | Description |
 |---------|-------|-------------|
+| `POST` | `/api/auth/register` | Inscription email / mot de passe → tokens |
+| `POST` | `/api/auth/login` | Connexion email / mot de passe → tokens |
 | `POST` | `/api/auth/google` | Sign-in avec idToken Google |
 | `POST` | `/api/auth/refresh` | Renouveler l'accessToken |
+
+Exemple pour tester sans Google :
+
+```bash
+# Inscription
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"me@test.dev","password":"motdepasse123","name":"Moi"}'
+
+# Connexion (renvoie accessToken + refreshToken)
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"me@test.dev","password":"motdepasse123"}'
+
+# Appel authentifié
+curl http://localhost:3001/api/profile -H "Authorization: Bearer <accessToken>"
+```
 
 ### Profil (global)
 | Méthode | Route | Description |

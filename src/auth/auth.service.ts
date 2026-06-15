@@ -1,6 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -11,6 +16,42 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  // ------------------------------------------------------------------
+  // Inscription email / mot de passe
+  // ------------------------------------------------------------------
+  async register(email: string, password: string, name: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('Un compte existe déjà pour cet email');
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await this.prisma.user.create({
+      data: { email, name, password: hashed },
+    });
+
+    return this.generateTokens(user.id, user.email);
+  }
+
+  // ------------------------------------------------------------------
+  // Connexion email / mot de passe
+  // ------------------------------------------------------------------
+  async login(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Message générique : ne pas révéler si l'email existe
+    if (!user || !user.password || !user.isActive) {
+      throw new UnauthorizedException('Email ou mot de passe invalide');
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      throw new UnauthorizedException('Email ou mot de passe invalide');
+    }
+
+    return this.generateTokens(user.id, user.email);
+  }
 
   // ------------------------------------------------------------------
   // Google Sign-In (mobile) — vérifie l'idToken renvoyé par le SDK mobile

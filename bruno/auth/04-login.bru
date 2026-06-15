@@ -1,0 +1,32 @@
+meta {
+  name: Login (email/password)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "me@test.dev",
+    "password": "motdepasse123"
+  }
+}
+
+script:post-response {
+  const data = res.getBody();
+  if (data && data.accessToken) {
+    bru.setEnvVar("accessToken", data.accessToken);
+    bru.setEnvVar("refreshToken", data.refreshToken);
+  }
+}
+
+docs {
+  Connexion email / mot de passe.
+  Retourne { accessToken, refreshToken } — enregistrés automatiquement
+  dans les variables d'environnement `accessToken` / `refreshToken`.
+}

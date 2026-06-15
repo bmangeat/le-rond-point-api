@@ -74,6 +74,7 @@ model User {
   name          String
   image         String?
   emailVerified DateTime?
+  password      String? // hash bcrypt — null pour les comptes OAuth (Google)
 
   // Profil global (partagé entre tous les groupes)
   city      String?
